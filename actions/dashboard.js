@@ -78,6 +78,58 @@ export async function createAccount(data) {
   }
 }
 
+//delete the code
+
+export async function deleteAccount(accountId) {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      throw new Error("Unauthorized");
+    }
+
+    // find account
+    const account = await db.account.findUnique({
+      where: { id: accountId },
+    });
+
+    if (!account) {
+      throw new Error("Account not Fount");
+    }
+
+    // Check if the user owns the account
+    const user = await db.user.findUnique({
+      where: { clerkUserId: userId },
+    });
+
+    if (!user || account.userId !== user.id) {
+      throw new Error("Unauthorized");
+    }
+
+    // Delete the account
+    await db.account.delete({
+      where: { id: accountId },
+    });
+   
+    if (account.isDefault) {
+      const otherAccount = await db.account.findFirst({
+        where: { userId: user.id },
+      });
+      if (otherAccount) {
+        await db.account.update({
+          where: { id: otherAccount.id },
+          data: { isDefault: true },
+        });
+    }
+    }
+    revalidatePath("/dashboard");
+    return { success: true, message: "Account deleted successfully" };
+  }
+  catch (error) {
+   return { success: false, message: error.message };
+  }
+}
+
 export async function getUserAccounts() {
    const { userId } = await auth();
    if (!userId) {

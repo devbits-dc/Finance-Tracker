@@ -56,8 +56,9 @@ useEffect(() => {
 
 
       {/* Overview */}
+
       {/* Accounts Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-6">
         <CreateAccountDrawer>
           <Card className="hover:shadow-md transition-shadow cursor-pointer border-dashed">
             <CardContent className="flex flex-col items-center justify-center text-muted-foreground h-full pt-5">
