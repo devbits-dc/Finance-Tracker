@@ -1,13 +1,10 @@
 "use server";
 
-import { db } from '@/lib/prisma';
-import { auth } from '@clerk/nextjs/server';
-import { revalidatePath } from 'next/cache';
-import React from 'react'
+import { db } from "@/lib/prisma";
+import { auth } from "@clerk/nextjs/server";
+import { revalidatePath } from "next/cache";
 
 export async function getCurrentBudget(accountId) {
-  
-  console.log("accountid", accountId);
   try {
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthorized");
@@ -16,7 +13,9 @@ export async function getCurrentBudget(accountId) {
       where: { clerkUserId: userId },
     });
 
-    if (!user) throw new Error("User not found");
+    if (!user) {
+      throw new Error("User not found");
+    }
 
     const budget = await db.budget.findFirst({
       where: {
@@ -24,21 +23,19 @@ export async function getCurrentBudget(accountId) {
       },
     });
 
-    
+    // Get current month's expenses
     const currentDate = new Date();
-    
     const startOfMonth = new Date(
       currentDate.getFullYear(),
-      currentDate.getMonth()-1,
+      currentDate.getMonth(),
       1
     );
-    
     const endOfMonth = new Date(
       currentDate.getFullYear(),
-      currentDate.getMonth(),
+      currentDate.getMonth() + 1,
       0
     );
-    
+
     const expenses = await db.transaction.aggregate({
       where: {
         userId: user.id,
@@ -53,20 +50,18 @@ export async function getCurrentBudget(accountId) {
         amount: true,
       },
     });
-    // console.log("Transactions Found:", expenses);
+
     return {
       budget: budget ? { ...budget, amount: budget.amount.toNumber() } : null,
       currentExpenses: expenses._sum.amount
-      ? expenses._sum.amount.toNumber()
-      : 0,
+        ? expenses._sum.amount.toNumber()
+        : 0,
     };
   } catch (error) {
     console.error("Error fetching budget:", error);
     throw error;
   }
 }
-
-
 
 export async function updateBudget(amount) {
   try {

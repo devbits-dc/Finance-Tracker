@@ -1,23 +1,25 @@
 "use client";
-import { getUserAccounts } from "@/actions/dashboard";
+import { getDashboardData, getUserAccounts } from "@/actions/dashboard";
 import CreateAccountDrawer from "@/components/CreateAccountDrawer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus } from "lucide-react";
-import React, { useEffect, useState } from "react";
-import AccountCard from "./_components/account-card";
+import React, { Suspense, useEffect, useState } from "react";
+import { AccountCard } from "./_components/account-card";
 import { getCurrentBudget } from "@/actions/budget";
 import BudgetProgress from "./_components/budget-progress";
+import { DashboardOverview } from "./_components/transcation-overview";
 
 const DashboardPage = () => {
   const [accounts, setAccounts] = useState([]);
   const [budgetData, setBudgetData] = useState(null);
+  const [transactions, setTransactions] = useState([]);
 
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
         const data = await getUserAccounts();
         console.log("Accounts:", data);
-        setAccounts(data || []); 
+        setAccounts(data || []);
       } catch (error) {
         console.error("Error fetching accounts:", error);
       }
@@ -26,36 +28,51 @@ const DashboardPage = () => {
     fetchAccounts();
   }, []);
 
-  const defaultAccount = accounts?.find((account) => account.isDefault);
+  const defaultAccount =
+    accounts?.length > 0 ? accounts.find((account) => account.isDefault) : null;
 
-useEffect(() => {
-  if (defaultAccount) {
-    const fetchBudget = async () => {
-      try {
-        const budget = await getCurrentBudget(defaultAccount.id);
-        setBudgetData(budget);
-      } catch (error) {
-        console.error("Error fetching budget:", error);
-      }
-    };
-    
+  useEffect(() => {
+    if (defaultAccount) {
+      const fetchBudget = async () => {
+        try {
+          const budget = await getCurrentBudget(defaultAccount.id);
+          setBudgetData(budget);
+        } catch (error) {
+          console.error("Error fetching budget:", error);
+        }
+      };
 
-    fetchBudget();
-  }
-}, [defaultAccount]); 
+      fetchBudget();
+    }
+  }, [defaultAccount]);
+
+ useEffect(() => {
+   const fetchData = async () => {
+     const data = await getDashboardData();
+     setTransactions(data || []);
+   };
+
+   fetchData();
+ }, [defaultAccount]);
 
 
   return (
-    <div className="px-5">
+    <div className="px-5 space-y-5">
       {/* Budget Progress */}
       {defaultAccount && (
         <BudgetProgress
           initialBudget={budgetData?.budget}
-          currentExpenses={budgetData?.currentExpenses || 0} />
-  )}
-
+          currentExpenses={budgetData?.currentExpenses || 0}
+        />
+      )}
 
       {/* Overview */}
+      <Suspense fallback={"Loading OverView..."}>
+        <DashboardOverview
+          accounts={accounts}
+          transactions={transactions || []}
+        />
+      </Suspense>
 
       {/* Accounts Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-6">

@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { updateBudget } from "@/actions/budget";
 
-const BudgetProgress=({ initialBudget, currentExpenses })=> {
+const BudgetProgress = ({ initialBudget, currentExpenses }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [newBudget, setNewBudget] = useState(
     initialBudget?.amount?.toString() || ""
@@ -33,8 +33,6 @@ const BudgetProgress=({ initialBudget, currentExpenses })=> {
   const percentUsed = initialBudget
     ? (currentExpenses / initialBudget.amount) * 100
     : 0;
-  
-  
 
   const handleUpdateBudget = async () => {
     const amount = parseFloat(newBudget);
@@ -84,7 +82,7 @@ const BudgetProgress=({ initialBudget, currentExpenses })=> {
                   autoFocus
                   disabled={isLoading}
                 />
-                <Button                       
+                <Button
                   variant="ghost"
                   size="icon"
                   onClick={handleUpdateBudget}
@@ -133,8 +131,8 @@ const BudgetProgress=({ initialBudget, currentExpenses })=> {
                 percentUsed >= 90
                   ? "bg-red-500"
                   : percentUsed >= 75
-                  ? "bg-yellow-500"
-                  : "bg-green-500"
+                    ? "bg-yellow-500"
+                    : "bg-green-500"
               }`}
             />
             <p className="text-xs text-muted-foreground text-right">
@@ -146,5 +144,4 @@ const BudgetProgress=({ initialBudget, currentExpenses })=> {
     </Card>
   );
 }
-
 export default BudgetProgress;

@@ -37,7 +37,7 @@ export async function createAccount(data) {
       throw new Error("Balance is required");
     }
 
-    const balanceFloat = parseFloat(data.balance); 
+    const balanceFloat = parseFloat(data.balance);
     if (isNaN(balanceFloat)) {
       throw new Error("Invalid balance amount");
     }
@@ -47,7 +47,7 @@ export async function createAccount(data) {
       where: { userId: user.id },
     });
 
-    // 🛠 FIX: Check for isDefault in data
+    //  FIX: Check for isDefault in data
     const shouldBeDefault =
       existingAccount.length === 0 ? true : !!data.isDefault;
 
@@ -55,7 +55,7 @@ export async function createAccount(data) {
     if (shouldBeDefault) {
       await db.account.updateMany({
         where: { userId: user.id, isDefault: true },
-        data: { isDefault: false }, 
+        data: { isDefault: false },
       });
     }
 
@@ -74,7 +74,7 @@ export async function createAccount(data) {
     revalidatePath("/dashboard");
     return { success: true, data: serializedAccount };
   } catch (error) {
-    return { success: false, message: error.message }; 
+    return { success: false, message: error.message };
   }
 }
 
@@ -110,7 +110,7 @@ export async function deleteAccount(accountId) {
     await db.account.delete({
       where: { id: accountId },
     });
-   
+
     if (account.isDefault) {
       const otherAccount = await db.account.findFirst({
         where: { userId: user.id },
@@ -120,30 +120,29 @@ export async function deleteAccount(accountId) {
           where: { id: otherAccount.id },
           data: { isDefault: true },
         });
-    }
+      }
     }
     revalidatePath("/dashboard");
     return { success: true, message: "Account deleted successfully" };
-  }
-  catch (error) {
-   return { success: false, message: error.message };
+  } catch (error) {
+    return { success: false, message: error.message };
   }
 }
 
 export async function getUserAccounts() {
-   const { userId } = await auth();
-   if (!userId) {
-     throw new Error("Unauthorized");
-   }
-
-   // Find user in database
-   const user = await db.user.findUnique({
-     where: { clerkUserId: userId },
-   });
-   if (!user) {
-     throw new Error("User not found");
+  const { userId } = await auth();
+  if (!userId) {
+    throw new Error("Unauthorized");
   }
-  
+
+  // Find user in database
+  const user = await db.user.findUnique({
+    where: { clerkUserId: userId },
+  });
+  if (!user) {
+    throw new Error("User not found");
+  }
+
   const accounts = await db.account.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "desc" },
@@ -151,11 +150,32 @@ export async function getUserAccounts() {
       _count: {
         select: {
           transactions: true,
-        }
-      }
-    }
-  }); 
+        },
+      },
+    },
+  });
   const serializedAccount = accounts.map(serializeTransaction);
 
   return serializedAccount;
+}
+
+export async function getDashboardData() {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  const user = await db.user.findUnique({
+    where: { clerkUserId: userId },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Get all user transactions
+  const transactions = await db.transaction.findMany({
+    where: { userId: user.id },
+    orderBy: { date: "desc" },
+  });
+
+  return transactions.map(serializeTransaction);
 }
